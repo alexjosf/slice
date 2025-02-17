@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "614026222484",
+    "project_id": "slice-orange",
+    "storage_bucket": "slice-orange.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:614026222484:android:c3d5c6039fa66c2ad14d81",
+        "android_client_info": {
+          "package_name": "com.orange.slice"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFjrYalf6hkbO3ZJ_QtO7Pqb5_OKOobWA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
