@@ -48,7 +48,7 @@ export default function LogIn() {
             setSnackBarText('Enter valid phone number')
             setSnackBarVisibility(!snackBarVisibility)
         } else {
-            const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
+            const confirmation = await auth().signInWithPhoneNumber(phoneNumber.replace(/[ \-\(\)\.]/g, ""));
             setConfirm(confirmation);
         }
     }

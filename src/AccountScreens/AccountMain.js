@@ -130,13 +130,13 @@ export default Account = () => {
                     </TouchableOpacity>
                 </View>
                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                    {(userData["imageurl"]) ?
+                    {(userData.imageurl) ?
                         <TouchableOpacity onPress={() => changePictureAlert()}>
                             <View style={styles.profileContainer}>
-                                <Image source={{ uri: userData["imageurl"] }}
+                                <Image source={{ uri: userData.imageurl }}
                                     style={styles.profilePicture} />
                             </View>
-                        </TouchableOpacity> : <ImageHolder text = {name} size = {100}/>
+                        </TouchableOpacity> : <ImageHolder text = {userData.name} size = {100} num={userData.imagenum}/>
                     }
                     <Text style={styles.basicInfoText}>
                         Basic Info
@@ -205,10 +205,10 @@ export default Account = () => {
                             {userData["phoneno"]}
                         </Text>
                     </View>
-                    <TouchableOpacity
+                    {/* <TouchableOpacity
                         onPress={() => setNumberModalVisible(!numberModalVisible)}>
                         <Icon name='edit' size={24} color={'black'} />
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                 </View>
                 <Modal
                     animationType="none"

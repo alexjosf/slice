@@ -18,24 +18,22 @@ import { Snackbar } from 'react-native-paper';
 import uuid from 'react-native-uuid';
 import CountryData from '../../assets/data/CountryData';
 import axios from 'axios';
-import userDataStore from '../../store';
+import { ImageHolder } from '../_Components/ImageHolder';
 
 
 export default function SettleExpense() {
     const navigation = useNavigation();
     const route = useRoute();
     const balanceAmount = route.params.balanceAmount;
-    const payer = route.params.payer;
-    const reciever = route.params.reciever;
+    const payerData = route.params.payer;
+    const recieverData = route.params.reciever;
 
     const postID = "s-" + uuid.v4()
-    const [payerData, setPayerData] = useState({})
-    const [recieverData, setRecieverData] = useState({})
     const [amount, setAmount] = useState(String(Math.abs(balanceAmount)))
     const [dateOpen, setDateOpen] = useState(false)
     const [date, setDate] = useState(new Date())
-    const [payerBalance, setPayerBalance] = useState()
-    const [recieverBalance, setRecieverBalance] = useState()
+    const payerBalance = -Math.abs(balanceAmount)
+    const recieverBalance = Math.abs(balanceAmount)
 
     const [snackBarText, setSnackBarText] = useState("")
     const [snackBarVisibility, setSnackBarVisibility] = useState(false)
@@ -43,25 +41,9 @@ export default function SettleExpense() {
     const [saving, setSaving] = useState(false)
     const [bankTransfer, setBankTransfer] = useState(true)
 
-    useEffect(() => {
-        getUserData()
-        async function getUserData() {
-            firestore().collection("Users").doc(payer).get().then(
-                (document) => {
-                    if (document.exists) {
-                        setPayerData({ uid: document.data().uid, name: document.data().name.split(" ")[0], imageurl: document.data().imageurl, country: document.data().country, token: document.data().token })
-                        setPayerBalance(-Math.abs(balanceAmount))
-                    }
-                })
-            firestore().collection("Users").doc(reciever).get().then(
-                (document) => {
-                    if (document.exists) {
-                        setRecieverData({ uid: document.data().uid, name: document.data().name.split(" ")[0], imageurl: document.data().imageurl, country: document.data().country, token: document.data().token })
-                        setRecieverBalance(Math.abs(balanceAmount))
-                    }
-                })
-        }
-    }, [])
+    const firstName = (text) => {
+        return text.split(' ')[0]
+    }
 
     const addTransaction = (payer, reciever, amount, payerBalance, recieverBalance, date, postID, bankTransfer) => {
         if (Math.abs(recieverBalance) < Number(amount)) {
@@ -77,6 +59,8 @@ export default function SettleExpense() {
                 } else {
                     transfer = 'Paid in cash'
                 }
+                var batch = firestore().batch();
+                
                 setSaving(!saving)
                 let transaction = {
                     "tid": postID,
@@ -87,21 +71,22 @@ export default function SettleExpense() {
                     "type": 'Settlement Expense',
                     "members": [payer['uid'], reciever['uid']]
                 }
-                await firestore().collection("Transactions").doc(postID).set(transaction, { merge: true })
-                await firestore().collection("Users").doc(reciever['uid'])
-                    .collection("Friends")
-                    .doc(payer['uid'])
-                    .set({
+                batch.set(firestore().collection("Transactions").doc(postID), transaction, { merge: true })
+
+                batch.set(firestore().collection("Users").doc(reciever['uid']).collection("Friends").doc(payer['uid']),
+                    {
                         balanceAmount: +parseFloat(-payerBalance - parseFloat(amount)).toFixed(2),
                         transactions: { [postID]: amount }
                     }, { merge: true })
-                await firestore().collection("Users").doc(payer['uid'])
+                batch.set(firestore().collection("Users").doc(payer['uid'])
                     .collection("Friends")
                     .doc(reciever['uid'])
-                    .set({
+                    , {
                         balanceAmount: +parseFloat(-recieverBalance + parseFloat(amount)).toFixed(2),
                         transactions: { [postID]: amount }
                     }, { merge: true })
+
+                await batch.commit()
 
                 sendPushNotificationSettlement(CountryData[payerData.country]['currency'], amount, payerData.name, payerData.token)
                 sendPushNotificationSettlement(CountryData[recieverData.country]['currency'], amount, payerData.name, recieverData.token)
@@ -112,20 +97,20 @@ export default function SettleExpense() {
     }
 
     const sendPushNotificationSettlement = (currency, amount, user, token) => {
-        if(token){
-        axios.post('https://orange-slice-server.onrender.com/addSettlement',
-            {
-                currency: currency,
-                amount: amount,
-                user: user,
-                token: token
-            })
-            .then(response => {
-                console.log(response.data); // Logs the response data
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+        if (token) {
+            axios.post('https://orange-slice-server.onrender.com/addSettlement',
+                {
+                    currency: currency,
+                    amount: amount,
+                    user: user,
+                    token: token
+                })
+                .then(response => {
+                    console.log(response.data); // Logs the response data
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
         }
     }
 
@@ -151,15 +136,19 @@ export default function SettleExpense() {
             </View>
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', margin: 10 }}>
-                    {(payerData['imageurl']) && <Image source={{ uri: payerData['imageurl'] }}
-                        style={styles.profilePicture} />}
+                    {(payerData.imageurl) ?
+                        <Image source={{ uri: payerData.imageurl }} style={styles.profilePicture} />
+                        : (payerData.name) && <ImageHolder text={payerData.name} size={50} num={payerData.imagenum} />
+                    }
                     <View style={{ margin: 10 }}>
                         <Icon name='arrow-right-thin' size={24} color={Colors.black} />
                     </View>
-                    {(recieverData['imageurl']) && <Image source={{ uri: recieverData['imageurl'] }}
-                        style={styles.profilePicture} />}
+                    {(recieverData.imageurl) ?
+                        <Image source={{ uri: recieverData.imageurl }} style={styles.profilePicture} />
+                        : (recieverData.name) && <ImageHolder text={recieverData.name} size={50} num={recieverData.imagenum} />
+                    }
                 </View>
-                <Text>{(payerData['name'])} is paying {(recieverData['name'])}</Text>
+                <Text>{(payerData['name']) && firstName(payerData.name)} is paying {(recieverData['name']) && firstName(recieverData.name)}</Text>
                 <TextInput style={styles.inputAmount}
                     maxLength={10}
                     keyboardType="numeric"

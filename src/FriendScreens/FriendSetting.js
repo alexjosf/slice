@@ -15,6 +15,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import firestore from '@react-native-firebase/firestore';
 import { Snackbar } from 'react-native-paper';
 import userDataStore from '../../store';
+import { ImageHolderGroup } from '../_Components/ImageHolderGroup';
 
 export default FriendSetting = () => {
     const navigation = useNavigation();
@@ -27,23 +28,15 @@ export default FriendSetting = () => {
     const groupData = userDataStore((state) => state.groupDetails)
 
     useEffect(() => {
-        let isMounted = true;
-        if (isMounted) {
-            getGroups()
-            async function getGroups() {
-                let temp = []
-                groupData.forEach(
-                    (document) => {
-                        if ((document.members).includes(uId)) {
-                            temp.push(document)
-                        }
-                    }
-                )
-                setGroups(temp)
+        let temp = []
+        Object.values(groupData).forEach(
+            (document) => {
+                if ((document.members).includes(uId)) {
+                    temp.push(document)
+                }
             }
-        }
-
-        return () => { isMounted = false; };
+        )
+        setGroups(temp)
     }, [])
 
     const unFriendAlert = (uId, balanceAmount) => {
@@ -64,7 +57,7 @@ export default FriendSetting = () => {
     }
 
     const unFriend = (uId, balanceAmount) => {
-        if (balanceAmount != 0) {
+        if (balanceAmount > 0 || balanceAmount < 0) {
             setSnackBarVisibility(!snackBarVisibility)
         }
         else {
@@ -101,10 +94,14 @@ export default FriendSetting = () => {
                 renderItem={({ item }) => (
                     <TouchableOpacity
                         activeOpacity={0.5}
-                        onPress={() => navigation.navigate('GroupMessages', { gid: item.gid, imageurl: item.imageurl, gname: item.gname })}>
+                        onPress={() => navigation.navigate('GroupMessages', { gData: item })}>
                         <View style={[styles.groupListWrapper]}>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Image source={{ uri: item.imageurl }} style={styles.groupListImage} />
+                                {(item.imageurl) ?
+                                    <Image source={{ uri: item.imageurl }} style={styles.groupListImage} />
+                                    :
+                                    <ImageHolderGroup emoji={item.emoji} size={30} num={item.imagenum} />
+                                }
                                 <Text style={styles.groupListText}>
                                     {item.gname}
                                 </Text>

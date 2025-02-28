@@ -9,8 +9,9 @@ import firestore from '@react-native-firebase/firestore';
 export default NewGroup = () => {
     const navigation = useNavigation();
     const [groupName, setGroupName] = useState("");
+    const [emoji, setEmoji] = useState("");
     const [alert, setAlert] = useState("");
-    const gid = "G" + new Date().getTime() +"-"+ auth().currentUser.uid;
+    const gid = "G" + new Date().getTime() + "-" + auth().currentUser.uid;
 
     const AddNewGroup = (groupName) => {
         const groupsCollection = firestore().collection("Groups").doc(gid);
@@ -24,10 +25,12 @@ export default NewGroup = () => {
                 "gname": groupName,
                 "gid": gid,
                 'transactions': [],
-                "imageurl": "https://i.pinimg.com/564x/a6/be/9c/a6be9ced2fd7a0884518e3535ff0bce8.jpg",
+                "emoji": emoji,
+                'imagenum': Math.floor(Math.random() * 17),
+                "imageurl": "",
                 "members": [auth().currentUser.uid]
             })
-            
+
             usersCollection.set({
                 "groups": firestore.FieldValue.arrayUnion(gid),
             }, { merge: true });
@@ -46,8 +49,12 @@ export default NewGroup = () => {
                 </Text>
             </View>
             <View style={{ alignItems: 'center' }}>
-                <Image source={require('../../assets/images/addGroupImage.png')}
-                    style={styles.groupImage} />
+                {/* <Image source={require('../../assets/images/addGroupImage.png')}
+                    style={styles.groupImage} /> */}
+                <TextInput style={styles.groupName}
+                    placeholder='Enter an emoji'
+                    value={emoji}
+                    onChangeText={(value) => setEmoji(value.match(/\p{Extended_Pictographic}/u)?.[0] || '')} />
                 <TextInput style={styles.groupName}
                     placeholder='Enter group Name'
                     value={groupName}

@@ -15,11 +15,16 @@ import Contacts from 'react-native-contacts';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { Snackbar } from 'react-native-paper';
+import { ImageHolder } from '../_Components/ImageHolder';
+import userDataStore from '../../store';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 export default SearchFriend = () => {
+  const navigation = useNavigation();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [friends, setFriends] = useState([])
+  const friends = userDataStore((state) => state.friendID)
+  const userData = userDataStore((state) => state.userData)
 
   const [snackBarText, setSnackBarText] = useState("")
   const [snackBarVisibility, setSnackBarVisibility] = useState(false)
@@ -27,47 +32,51 @@ export default SearchFriend = () => {
   useEffect(() => {
     let isMounted = true;
     if (isMounted) {
-    PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_CONTACTS, {
-      title: 'Contacts',
-      message: 'Give Permission for contacts to go further.',
-      buttonPositive: 'Accept',
-    })
-      .then((res) => {
-        console.log('Permission: ', res);
-        Contacts.getAll()
-          .then((contacts) => {
-            let filterNumbers = contacts
-              .map((item) => item["phoneNumbers"]).flat(1)
-              .map((item) => item["number"]
-                .replaceAll(" ", "")
-                .replaceAll("-", "")
-                .replaceAll("(", "")
-                .replaceAll(")", ""))
-            return filterNumbers = filterNumbers.filter((value, index) => filterNumbers.indexOf(value) === index)
-          }).then((filterNumbers) => {
-            getUsers(filterNumbers)
-            console.log(filterNumbers)
-          })
+      PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_CONTACTS, {
+        title: 'Contacts',
+        message: 'Give Permission for contacts to go further.',
+        buttonPositive: 'Accept',
       })
-      .catch((error) => {
-        console.error('Permission error: ', error);
-      })
-    }
+        .then((res) => {
+          console.log('Permission: ', res);
+          if (res == 'granted') {
+            Contacts.getAll()
+              .then((contacts) => {
+                let filterNumbers = contacts
+                  .map((item) => item["phoneNumbers"]?.map(p => p.number) ?? []) // Handle missing phoneNumbers
+                  .flat(1) // Flatten nested arrays
+                  .map((number) => number.replace(/[ \-\(\)]/g, "")) // Remove unwanted characters
 
+                filterNumbers = [...new Set(filterNumbers)]; // Remove duplicates efficiently
+                return filterNumbers;
+              })
+              .then((filterNumbers) => {
+                getUsers(filterNumbers); // Pass cleaned numbers to getUsers function
+                console.log(filterNumbers); // Log final numbers
+              })
+              .catch((error) => console.error("Error fetching contacts:", error)); // Handle errors
+          } else {
+            Alert.alert('NEED PERMISSION', 'Go to settings and grand permission to access contacts to continue',
+              [
+                {
+                  text: 'OKAY',
+                  onPress: () => { navigation.goBack() },
+                  color: 'black'
+                },
+              ]
+            );
+          }
+        })
+        .catch((error) => {
+          console.error('Permission error: ', error);
+        })
+    }
     return () => { isMounted = false; };
   }, [])
 
   async function getUsers(filterNumbers) {
-    let myNumber = await firestore().collection("Users").doc(auth().currentUser.uid).get()
-      .then(documentSnapshot => {
-        if (documentSnapshot) {
-          if (documentSnapshot.data()) {
-            return (documentSnapshot.data().phoneno)
-          }
-        }
-      })
-      
-    let numbers = await filterNumbers.filter(item => item !== myNumber)
+    let numbers = await filterNumbers.filter(item => item !== userData.phoneno)
+
     await firestore().collection("Users").get().then((snapshot) => {
       let temp = [];
       snapshot.docs.forEach(
@@ -85,34 +94,6 @@ export default SearchFriend = () => {
       setLoading(false)
     });
   }
-
-  useEffect(() => {
-    let isMounted = true;
-    if (isMounted) {
-    getFriendIDs()
-    async function getFriendIDs() {
-      let friendIDs = await firestore().collection("Users").doc(auth().currentUser.uid).collection("Friends")
-        .get()
-        .then((snapshot) => {
-          let temp = [];
-          snapshot.docs.forEach(
-            (document) => {
-              if (document.exists) {
-                temp.push(document.ref.id)
-              }
-            }
-          )
-          return temp
-        }).catch(
-          (error) => { console.log(error) }
-        )
-      console.log(friendIDs)
-      setFriends(friendIDs)
-    }
-  }
-
-  return () => { isMounted = false; };
-  }, [])
 
   const AddFriendAlert = (uid) => {
     Alert.alert('ADD FRIEND', 'Do you want to add him/her as friend?',
@@ -167,7 +148,11 @@ export default SearchFriend = () => {
                 onPress={() => AddFriendAlert(item.uid)}>
                 <View style={styles.friendListWrapper}>
                   <View style={styles.friendDataWrapper}>
-                    <Image source={{ uri: item.imageurl }} style={styles.friendListImage} />
+                    {(item.imageurl) ?
+                      <Image source={{ uri: item.imageurl }} style={styles.friendListImage} />
+                      :
+                      <ImageHolder text={item.name} size={40} num={item.imagenum} />
+                    }
                     <Text style={styles.friendListName}>
                       {item.name}
                     </Text>

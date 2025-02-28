@@ -31,7 +31,6 @@ export default AddMemberGroup = () => {
   const [snackBarText, setSnackBarText] = useState("")
   const [snackBarVisibility, setSnackBarVisibility] = useState(false)
 
-  const friendID = userDataStore((state) => state.friendID)
   const friendDetails = userDataStore((state) => state.friendDetails)
 
   useEffect(() => {
@@ -143,7 +142,7 @@ export default AddMemberGroup = () => {
                           {item.imageurl?
                           <Image source={{ uri: item.imageurl }} style={styles.memberListImage} />
                           :
-                          <ImageHolder text={item.name} size={30} />
+                          <ImageHolder text={item.name} size={30} num={item.imagenum} />
                           }
                           <Text style={styles.memberListName}>
                             {item.name}

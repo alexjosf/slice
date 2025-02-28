@@ -25,16 +25,20 @@ import { Snackbar } from 'react-native-paper';
 import CountryData from '../../assets/data/CountryData';
 import axios from 'axios';
 import userDataStore from '../../store';
+import { ImageHolder } from '../_Components/ImageHolder';
+import { ImageHolderGroup } from '../_Components/ImageHolderGroup';
 
 export default AddExpense = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const uId = route.params.uId;
   const gId = route.params.gId;
-  const friendIDs = route.params.friendIDs;
+  const userData = userDataStore((state) => state.userData)
+  const friendDetails = userDataStore((state) => state.friendDetails)
+  const groupDetails = userDataStore((state) => state.groupDetails)
 
   // Variables with firebase data
-  const [postID, setPostID] = useState(uuid.v4())
+  const postID = uuid.v4()
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState("")
@@ -50,8 +54,8 @@ export default AddExpense = () => {
   const [splitEqual, setSplitEqual] = useState(true)
 
   const [members, setMembers] = useState([])
-  const [groups, setGroups] = useState()
   const [friends, setFriends] = useState([])
+  const [groups, setGroups] = useState()
 
   const [groupModalVisibility, setGroupModalVisibility] = useState(false)
   const [paidModalVisibility, setPaidModalVisibility] = useState(false)
@@ -66,106 +70,27 @@ export default AddExpense = () => {
   const [snackBarText, setSnackBarText] = useState("")
   const [snackBarVisibility, setSnackBarVisibility] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [userData, setUserData] = useState();
-
-  const updateExpenseLive = userDataStore((state) => state.updateExpenseLive)
 
   useEffect(() => {
     if (gId) {
-      firestore().collection("Groups").doc(gId)
-        .get().then(
-          document => {
-            setGroupSelected(document.data())
-          }
-        )
+      setGroupSelected(gId)
     }
-    getGroups()
-    async function getGroups() {
-      let userData = (await firestore().collection("Users").doc(auth().currentUser.uid).get()).data()
-      setUserData(userData)
-      let groupIDs = await firestore().collection("Users").doc(auth().currentUser.uid)
-        .get()
-        .then((document) => {
-          if (document.exists) {
-            return document.data().groups
-          }
-        })
-        .catch((error) => {
-          console.log(error)
-        })
-      try {
-        await firestore().collection("Groups").get().then((snapshot) => {
-          let temp = [];
-          snapshot.docs.forEach(
-            (document) => {
-              if (document.exists) {
-                // if (gId && gId == document.data().gid || eData.group == document.data().gid) {
-                //   setGroupSelected(document.data())
-                // }
-                groupIDs.forEach((item) => {
-                  if (item == document.data().gid) {
-                    temp.push(document.data())
-                  }
-                })
-              }
-            }
-          )
-          setGroups(temp)
-        });
-      } catch (error) {
-        console.log(error)
-      }
-    }
+    setGroups(groupDetails)
   }, []);
 
   useEffect(() => {
-    getFriends()
-    async function getFriends() {
-      let friendList = friendIDs
-      // If opened from group screen
-      if (!friendList) {
-        friendList = await firestore().collection("Users").doc(auth().currentUser.uid).collection("Friends")
-          .get()
-          .then((snapshot) => {
-            let temp = [];
-            snapshot.docs.forEach(
-              (document) => {
-                if (document.exists) {
-                  temp.push(document.data().uid)
-                }
-              })
-            return temp
-          }).catch(
-            (error) => { console.log(error) }
-          )
+    let temp = [...friendDetails, userData]
+    temp.forEach((document) => {
+      if (document.uid == auth().currentUser.uid) {
+        setSelectedPaidByData([document])
+        setPaidBy([auth().currentUser.uid])
       }
-      // Get details of users who are in friendlist array
-      await firestore().collection("Users").get().then((snapshot) => {
-        const temp = [];
-        snapshot.docs.forEach(
-          (document) => {
-            if (document.data().uid == auth().currentUser.uid) {
-              setSelectedPaidByData([document.data()])
-              setPaidBy([auth().currentUser.uid])
-              temp.push(document.data())
-            }
-            else if (document.data().uid == uId) {
-              setSelectedSplitByData([document.data()])
-              setSplitBy([uId])
-              temp.push(document.data())
-            }
-            else if (document.exists) {
-              friendList.forEach((item) => {
-                if (item == document.data().uid) {
-                  temp.push(document.data())
-                }
-              })
-            }
-          }
-        )
-        setFriends(temp)
-      });
-    }
+      else if (document.uid == uId) {
+        setSelectedSplitByData([document])
+        setSplitBy([uId])
+      }
+    })
+    setFriends(temp)
   }, []);
 
   useEffect(() => {
@@ -173,23 +98,17 @@ export default AddExpense = () => {
       let groupMembers = groupSelected['members']
       getMembers()
       async function getMembers() {
-        await firestore().collection("Users").get().then((snapshot) => {
-          let temp = [];
-          snapshot.docs.forEach(
-            (document) => {
+        let temp = [];
+        groupMembers.forEach((item) => {
+          firestore().collection("Users").doc(item).get().then((document) => {
+            if (document.exists) {
               if (document.data().uid == auth().currentUser.uid) {
                 setSelectedPaidByData([document.data()])
                 setPaidBy([auth().currentUser.uid])
               }
-              if (document.exists) {
-                groupMembers.forEach((item) => {
-                  if (item == document.data().uid) {
-                    temp.push(document.data())
-                  }
-                })
-              }
+              temp.push(document.data())
             }
-          )
+          })
           setMembers(temp)
         })
       }
@@ -238,15 +157,9 @@ export default AddExpense = () => {
 
   const addTransaction = async (transactionID, amount, description, category, date, groupSelected, paidByAmount, splitByAmount, payeeAmount, transactionMembers, oweAmount) => {
     setSaving(!saving)
-    let transactionType = ''
-    let postID = ''
-    if (groupSelected) {
-      transactionType = 'Group Expense'
-      postID = 'g-' + transactionID
-    } else {
-      transactionType = 'Friend Expense'
-      postID = 'f-' + transactionID
-    }
+    const transactionType = groupSelected ? "Group Expense" : "Friend Expense";
+    const postID = (groupSelected ? "g-" : "f-") + transactionID;
+    var batch = firestore().batch();
 
     if (transactionType == 'Group Expense') {
 
@@ -266,13 +179,11 @@ export default AddExpense = () => {
         "group": groupSelected['gid']
       }
 
-      updateExpenseLive(transaction)
+      batch.set(firestore().collection("Transactions").doc(postID), transaction, { merge: true })
 
-      await firestore().collection("Transactions").doc(postID).set(transaction, { merge: true })
-
-      await firestore().collection("Groups").doc(groupSelected['gid']).set({
-        transactions: firestore.FieldValue.arrayUnion(postID)
-      }, { merge: true })
+      batch.set(firestore().collection("Groups").doc(groupSelected['gid']),
+        { transactions: firestore.FieldValue.arrayUnion(postID) },
+        { merge: true })
     }
     else {
       let transaction = {
@@ -290,8 +201,10 @@ export default AddExpense = () => {
         "members": transactionMembers
       }
 
-      await firestore().collection("Transactions").doc(postID)
-        .set(transaction, { merge: true })
+
+      batch.set(
+        firestore().collection("Transactions").doc(postID),
+        transaction, { merge: true })
     }
 
     for (receiver in payeeAmount) {
@@ -302,14 +215,14 @@ export default AddExpense = () => {
         let payBalance = (await payPath.get()).data()
 
         if (getBalance && getBalance.balanceAmount) {
-          await getPath.set({
+          batch.set(getPath, {
             transactions: { [postID]: 'unsettled' },
             uid: payer,
             balanceAmount: +parseFloat(getBalance.balanceAmount + payeeAmount[receiver][payer]).toFixed(2),
           }, { merge: true })
         }
         else {
-          await getPath.set({
+          batch.set(getPath, {
             transactions: { [postID]: 'unsettled' },
             uid: payer,
             balanceAmount: payeeAmount[receiver][payer],
@@ -317,14 +230,14 @@ export default AddExpense = () => {
         }
 
         if (payBalance && payBalance.balanceAmount) {
-          await payPath.set({
+          batch.set(payPath, {
             transactions: { [postID]: 'unsettled' },
             uid: receiver,
             balanceAmount: +parseFloat(payBalance.balanceAmount - payeeAmount[receiver][payer]).toFixed(2),
           }, { merge: true })
         }
         else {
-          await payPath.set({
+          batch.set(payPath, {
             transactions: { [postID]: 'unsettled' },
             uid: receiver,
             balanceAmount: -payeeAmount[receiver][payer],
@@ -333,6 +246,9 @@ export default AddExpense = () => {
       }
     }
 
+    await batch.commit()
+
+    // need edit cache data
     for (i in transactionMembers) {
       let token = (await firestore().collection("Users").doc(transactionMembers[i]).get()).data().token
       sendPushNotificationExpense(description, amount, oweAmount[transactionMembers[i]], token)
@@ -600,7 +516,11 @@ export default AddExpense = () => {
         <View style={styles.groupWrapper}>
           {(groupSelected) ?
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-              <Image source={{ uri: groupSelected['imageurl'] }} style={styles.memberListImage} />
+              {(groupSelected.imageurl) ?
+                <Image source={{ uri: groupSelected.imageurl }} style={styles.memberListImage} />
+                :
+                <ImageHolder emoji={groupSelected.emoji} size={30} num={groupSelected.imagenum} />
+              }
               <Text style={styles.memberListText}>
                 {groupSelected['gname']}
               </Text>
@@ -703,7 +623,11 @@ export default AddExpense = () => {
                       onPress={() => [setGroup(item), setGroupModalVisibility(!groupModalVisibility)]}>
                       <View style={[styles.memberListWrapper, (item == groupSelected) ? { backgroundColor: 'grey' } : { backgroundColor: 'white' }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                          <Image source={{ uri: item.imageurl }} style={styles.memberListImage} />
+                          {(item.imageurl) ?
+                            <Image source={{ uri: item.imageurl }} style={styles.memberListImage} />
+                            :
+                            <ImageHolderGroup emoji={item.emoji} size={30} num={item.imagenum} />
+                          }
                           <Text style={styles.memberListText}>
                             {item.gname}
                           </Text>
@@ -738,7 +662,11 @@ export default AddExpense = () => {
           renderItem={({ item }) => (
             <View style={styles.selectedMemberWrapper}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Image source={{ uri: item.imageurl }} style={styles.selectedMemberImage} />
+                {(item.imageurl) ?
+                  <Image source={{ uri: item.imageurl }} style={styles.selectedMemberImage} />
+                  :
+                  <ImageHolder text={item.name} size={40} num={item.imagenum} />
+                }
                 <Text style={styles.selectedMemberText}>
                   {item.name}
                 </Text>
@@ -797,7 +725,11 @@ export default AddExpense = () => {
                       onPress={() => [addPaidByFriend(item)]}>
                       <View style={[styles.memberListWrapper, (paidBy.includes(item.uid)) ? { backgroundColor: 'grey' } : { backgroundColor: 'white' }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                          <Image source={{ uri: item.imageurl }} style={styles.memberListImage} />
+                          {(item.imageurl) ?
+                            <Image source={{ uri: item.imageurl }} style={styles.memberListImage} />
+                            :
+                            <ImageHolder text={item.name} size={30} num={item.imagenum} />
+                          }
                           <Text style={styles.memberListText}>
                             {item.name}
                           </Text>
@@ -832,7 +764,11 @@ export default AddExpense = () => {
           renderItem={({ item }) => (
             <View style={styles.selectedMemberWrapper}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Image source={{ uri: item.imageurl }} style={styles.selectedMemberImage} />
+                {(item.imageurl) ?
+                  <Image source={{ uri: item.imageurl }} style={styles.selectedMemberImage} />
+                  :
+                  <ImageHolder text={item.name} size={40} num={item.imagenum} />
+                }
                 <Text style={styles.selectedMemberText}>
                   {item.name}
                 </Text>
@@ -900,7 +836,11 @@ export default AddExpense = () => {
                       onPress={() => addSplitByFriend(item)}>
                       <View style={[styles.memberListWrapper, (splitBy.includes(item.uid)) ? { backgroundColor: 'grey' } : { backgroundColor: 'white' }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                          <Image source={{ uri: item.imageurl }} style={styles.memberListImage} />
+                          {(item.imageurl) ?
+                            <Image source={{ uri: item.imageurl }} style={styles.memberListImage} />
+                            :
+                            <ImageHolder text={item.name} size={30} num={item.imagenum} />
+                          }
                           <Text style={styles.memberListText}>
                             {item.name}
                           </Text>

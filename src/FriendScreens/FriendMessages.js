@@ -15,7 +15,6 @@ import Icon2 from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import CategoryData from '../../assets/data/CategoryData';
 import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
 import { FAB } from 'react-native-paper';
 import DateString from '../_Components/DateString';
 import userDataStore from '../../store';
@@ -24,98 +23,84 @@ import { ImageHolder } from '../_Components/ImageHolder';
 export default FriendMessages = () => {
     const navigation = useNavigation();
     const route = useRoute();
+    const friendData = route.params.data;
     const uId = route.params.uid;
-    const name = route.params.name;
-    const imageurl = route.params.imageurl;
-    const friendIDs = route.params.friendIDs;
     const currency = route.params.currency;
     const random = route.params.random
 
     const [hideSettled, setHideSettled] = useState(false);
 
     const [loading, setLoading] = useState(true);
-    const [balanceAmount, setBalanceAmount] = useState();
 
     const [payer, setPayer] = useState()
     const [reciever, setReciever] = useState()
 
+    const userData = userDataStore((state) => state.userData)
     const getTransactionFriend = userDataStore((state) => state.getTransactionFriend)
     const transactions = userDataStore((state) => state.transactionsFriend)
-    const updateBalanceAmountLive = userDataStore((state) => state.updateBalanceAmountLive)
+    const balanceAmountFriends = userDataStore((state) => state.balanceAmountFriends)
 
     const user = (userId) => {
         if (userId == auth().currentUser.uid) {
             return 'you'
         }
         else {
-            return name.split(" ")[0]
+            return friendData.name.split(" ")[0]
         }
     }
 
-    const balance = (map) => {
+    const balance = (item) => {
         const currentUserId = auth().currentUser.uid;
 
-        if (map?.[currentUserId]?.[uId] !== undefined) {
-            return map[currentUserId][uId];
-        } else if (map?.[uId]?.[currentUserId] !== undefined) {
-            return map[uId][currentUserId];
+        if (item?.[currentUserId]?.[uId] !== undefined) {
+            return item[currentUserId][uId];
+        } else if (item?.[uId]?.[currentUserId] !== undefined) {
+            return item[uId][currentUserId];
         } else {
             return 0; // Or handle the missing key appropriately
         }
     }
 
     useEffect(() => {
-        const unsubscribe = firestore().collection("Users").doc(auth().currentUser.uid)
-            .collection("Friends")
-            .doc(uId)
-            .onSnapshot(documentSnapshot => {
-                if (documentSnapshot && documentSnapshot.data()) {
-                    if (documentSnapshot.data().balanceAmount == 0) {
-                        setHideSettled(true)
-                    } else {
-                        setHideSettled(false)
-                    }
-
-                    if (documentSnapshot.data().balanceAmount < 0) {
-                        setPayer(auth().currentUser.uid)
-                        setReciever(uId)
-                    }
-                    else {
-                        setPayer(uId)
-                        setReciever(auth().currentUser.uid)
-                    }
-                    setBalanceAmount(documentSnapshot.data().balanceAmount)
-                    updateBalanceAmountLive(uId, documentSnapshot.data().balanceAmount)
-                    getTransactionFriend(uId, documentSnapshot.data().transactions)
-                }
-                setLoading(false)
-            });
-
-        return () => unsubscribe();
+        if (balanceAmountFriends[uId] == 0) {
+            setHideSettled(true)
+        } else {
+            setHideSettled(false)
+        }
+        if (balanceAmountFriends[uId] < 0) {
+            setPayer(userData)
+            setReciever(friendData)
+        }
+        else {
+            setPayer(friendData)
+            setReciever(userData)
+        }
+        getTransactionFriend(uId)
+        setLoading(false)
     }, [uId]);
 
     return (
         <View style={styles.container}>
             <View style={styles.AppBar}>
                 <View style={{ width: '50%', flexDirection: 'row', alignItems: 'center' }}>
-                    {imageurl ?
-                        <Image source={{ uri: imageurl }}
+                    {friendData.imageurl ?
+                        <Image source={{ uri: friendData.imageurl }}
                             style={styles.profilePicture} /> :
-                        <ImageHolder text={name} size={40} />
+                        <ImageHolder text={friendData.name} size={40} num={friendData.imagenum} />
                     }
                     <Text style={styles.AppBarText} ellipsizeMode="tail" numberOfLines={1} >
-                        {name}
+                        {friendData.name}
                     </Text>
                 </View>
                 <TouchableOpacity
                     activeOpacity={0.5}
-                    onPress={() => navigation.navigate('FriendSetting', { uId: uId, balanceAmount: balanceAmount })}>
+                    onPress={() => navigation.navigate('FriendSetting', { uId: uId, balanceAmount: balanceAmountFriends[uId] })}>
                     <View style={styles.iconButton}>
                         <Icon name='cog' size={24} color={Colors.black} />
                     </View>
                 </TouchableOpacity>
             </View>
-            {(balanceAmount) ?
+            {(balanceAmountFriends[uId]) ?
                 <View style={styles.settleBox}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Text style={{
@@ -123,20 +108,20 @@ export default FriendMessages = () => {
                             fontWeight: '400',
                             fontSize: 14,
                         }}>
-                            {(balanceAmount < 0) ? 'You owe : ' : 'Owes you : '}
+                            {(balanceAmountFriends[uId] < 0) ? 'You owe : ' : 'Owes you : '}
                         </Text>
                         <Text style={{
-                            color: (balanceAmount >= 0) ? Colors.green : Colors.red,
+                            color: (balanceAmountFriends[uId] >= 0) ? Colors.green : Colors.red,
                             fontWeight: '400',
                             fontSize: 14,
                         }}>
                             {currency}
-                            {Math.abs(balanceAmount)}
+                            {Math.abs(balanceAmountFriends[uId])}
                         </Text>
                     </View>
                     <TouchableOpacity
                         activeOpacity={0.5}
-                        onPress={() => { navigation.navigate('SettleExpense', { uId: uId, balanceAmount: balanceAmount, payer: payer, reciever: reciever }) }}>
+                        onPress={() => { navigation.navigate('SettleExpense', { uId: uId, balanceAmount: balanceAmountFriends[uId], payer: payer, reciever: reciever }) }}>
                         <Text style={{ color: 'blue', fontWeight: 'bold', }}>
                             Settle Up
                         </Text>
@@ -257,7 +242,7 @@ export default FriendMessages = () => {
             <FAB
                 icon={'plus'}
                 extended={false}
-                onPress={() => { navigation.navigate('AddExpense', { uId: uId, friendIDs: friendIDs }) }}
+                onPress={() => { navigation.navigate('AddExpense', { uId: uId}) }}
                 visible={true}
                 style={styles.fab}
                 color='white'
@@ -289,6 +274,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         color: 'black',
+        marginLeft: 10,
     },
     iconButton: {
         backgroundColor: "transparent",

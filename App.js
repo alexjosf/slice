@@ -19,7 +19,6 @@ import Dashboard from './src/DashboardScreens/DashboardMain';
 import Notifications from './src/DashboardScreens/Notifications';
 import Insights from './src/DashboardScreens/Insights';
 import AddExpense from './src/ExpenseScreens/AddExpense';
-import DateSelector from './src/DashboardScreens/DateSelector';
 import GroupMessages from './src/GroupScreens/GroupMessages';
 import FriendMessages from './src/FriendScreens/FriendMessages';
 import NewGroup from './src/GroupScreens/NewGroup';
@@ -74,7 +73,6 @@ export default function App() {
 
   const getToken = async () => {
     const token = await messaging().getToken()
-    console.log('token =', token)
   }
 
   useEffect(() => {
@@ -135,7 +133,6 @@ export default function App() {
           <Stack.Screen name="FriendSetting" component={FriendSetting} />
           <Stack.Screen name="Notifications" component={Notifications} />
           <Stack.Screen name="Insights" component={Insights} />
-          <Stack.Screen name="DateSelector" component={DateSelector} />
           <Stack.Screen name="GroupMessages" component={GroupMessages} />
           <Stack.Screen name="FriendMessages" component={FriendMessages} />
           <Stack.Screen name="AccountSettings" component={AccountSettings} />

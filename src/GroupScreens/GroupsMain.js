@@ -15,6 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import { FAB } from 'react-native-paper';
 import userDataStore from '../../store';
 import { useQuery } from '@tanstack/react-query';
+import { ImageHolderGroup } from '../_Components/ImageHolderGroup';
 
 const Groups = () => {
     const navigation = useNavigation();
@@ -86,11 +87,15 @@ const Groups = () => {
                             renderItem={({ item }) => (
                                 <TouchableOpacity
                                     activeOpacity={0.5}
-                                    onPress={() => navigation.navigate('GroupMessages', { gId: item.gid, gname: item.gname, imageurl: item.imageurl, random: Math.floor(Math.random() * 9) })}>
+                                    onPress={() => navigation.navigate('GroupMessages', { gData: item, gId: item.gid, gname: item.gname, imageurl: item.imageurl, random: Math.floor(Math.random() * 9) })}>
                                     <View style={styles.groupContainer}>
                                         <View style={{ flexDirection: 'row' }}>
                                             <View style={styles.groupDataWrapper}>
-                                                {<Image source={{ uri: item.imageurl }} style={styles.groupImage} />}
+                                                {(item.imageurl) ?
+                                                    <Image source={{ uri: item.imageurl }} style={styles.groupImage} />
+                                                    :
+                                                    <ImageHolderGroup emoji={item.emoji} size={40} num={item.imagenum} />
+                                                }
                                                 <View style={styles.groupRow}>
                                                     <Text style={styles.groupName}>
                                                         {item.gname}
@@ -185,6 +190,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: Colors.black,
         fontSize: 14,
+        marginLeft:10
     },
     groupRow: {
         paddingHorizontal: 5,

@@ -18,14 +18,14 @@ import firestore from '@react-native-firebase/firestore';
 import { FAB } from 'react-native-paper';
 import DateString from '../_Components/DateString';
 import userDataStore from '../../store';
+import { ImageHolderGroup } from '../_Components/ImageHolderGroup';
 
 
 export default GroupMessages = () => {
     const navigation = useNavigation();
     const route = useRoute();
+    const gData = route.params.gData
     const gId = route.params.gId
-    const gname = route.params.gname
-    const imageurl = route.params.imageurl;
     const random = route.params.random
 
     const [loading, setLoading] = useState(true);
@@ -37,7 +37,6 @@ export default GroupMessages = () => {
     useEffect(() => {
         const unsubscribe = firestore().collection("Groups").doc(gId).onSnapshot(documentSnapshot => {
             if (documentSnapshot && documentSnapshot.data()) {
-                console.log(documentSnapshot.data())
                 getTransactionGroup(gId, documentSnapshot.data().transactions)
             }
             setLoading(false)
@@ -50,10 +49,13 @@ export default GroupMessages = () => {
         <View style={styles.container}>
             <View style={styles.AppBar}>
                 <View style={{ width: '50%', flexDirection: 'row', alignItems: 'center' }}>
-                    <Image source={{ uri: imageurl }}
-                        style={styles.profilePicture} />
+                    {(gData.imageurl) ?
+                        <Image source={{ uri: gData.imageurl }} style={styles.profilePicture} />
+                        :
+                        <ImageHolderGroup emoji={gData.emoji} size={40} num={gData.imagenum} />
+                    }
                     <Text style={styles.AppBarText} ellipsizeMode="tail" numberOfLines={1} >
-                        {gname}
+                        {gData.gname}
                     </Text>
                 </View>
                 <TouchableOpacity
@@ -145,7 +147,7 @@ export default GroupMessages = () => {
                 color='white'
                 style={styles.fab}
                 backgroundColor='royalblue'
-                onPress={() => { navigation.navigate('AddExpense', { gId: gId }) }}
+                onPress={() => { navigation.navigate('AddExpense', { gId: gData }) }}
             />
         </View>
     )
@@ -172,6 +174,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         color: 'black',
+        marginLeft: 10
     },
     iconButton: {
         backgroundColor: "transparent",
@@ -183,7 +186,7 @@ const styles = StyleSheet.create({
     profilePicture: {
         height: 40,
         width: 40,
-        borderRadius: 100,
+        borderRadius: 40,
         marginHorizontal: 5
     },
     friendContainer: {

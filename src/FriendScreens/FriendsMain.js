@@ -82,16 +82,15 @@ const Friends = () => {
                             renderItem={({ item }) => (
                                 <TouchableOpacity
                                     activeOpacity={0.5}
-                                    onPress={() => navigation.navigate('FriendMessages', { uid: item.uid, name: item.name, imageurl: item.imageurl, friendList: friendID, currency: CountryData[userCountry]['currency'], random: Math.floor(Math.random() * 9) })}>
+                                    onPress={() => navigation.navigate('FriendMessages', { data: item, uid: item.uid, friendList: friendID, currency: CountryData[userCountry]['currency'], random: Math.floor(Math.random() * 9) })}>
                                     <View style={styles.friendContainer}>
                                         <View style={{ flexDirection: 'row' }}>
                                             <View style={styles.friendDataWrapper}>
                                                 {(item.imageurl) ?
                                                     <Image source={{ uri: item.imageurl }} style={styles.friendImage} />
                                                     :
-                                                    <ImageHolder text={item.name} size={40} />
+                                                    <ImageHolder text={item.name} size={40} num={item.imagenum} />
                                                 }
-
                                                 <View style={styles.friendRow}>
                                                     <Text style={styles.friendName}>
                                                         {item.name}
@@ -192,12 +191,12 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 60,
-        marginRight: 10,
     },
     friendName: {
         fontWeight: 'bold',
         color: Colors.black,
         fontSize: 14,
+        marginLeft: 10,
     },
     friendRow: {
         paddingHorizontal: 5,

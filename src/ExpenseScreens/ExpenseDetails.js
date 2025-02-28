@@ -19,6 +19,10 @@ import CategoryData from '../../assets/data/CategoryData';
 import SettleImageData from '../../assets/data/SettleImageData';
 import DateString from '../_Components/DateString';
 import axios from 'axios';
+import { ImageHolder } from '../_Components/ImageHolder';
+import { ImageHolderGroup } from '../_Components/ImageHolderGroup';
+
+import userDataStore from '../../store';
 
 export default function ExpenseDetails() {
   const navigation = useNavigation();
@@ -47,14 +51,14 @@ export default function ExpenseDetails() {
   // Set who added the expense
   const [addedBy, setAddedBy] = useState('')
 
-  const [userData, setUserData] = useState();
+  const userData = userDataStore((state) => state.userData)
+  const groupDetails = userDataStore((state) => state.groupDetails)
+  const friendDetails = userDataStore((state) => state.friendDetails)
 
   useEffect(() => {
     getUser()
     // If not added by current user
     async function getUser() {
-      let userData = (await firestore().collection("Users").doc(auth().currentUser.uid).get()).data()
-      setUserData(userData)
       if (eData.uid != auth().currentUser.uid) {
         // Get who added the transaction
         let add = (await firestore().collection("Users").doc(eData.uid).get()).data().name
@@ -72,13 +76,9 @@ export default function ExpenseDetails() {
     async function getGroups() {
       //If group transaction
       if (eData.group) {
-        try {
-          // Get the group details
-          let GroupData = (await firestore().collection("Groups").doc(eData.group).get()).data()
-          setGroupInfo(GroupData)
-        } catch (error) {
-          console.log(error)
-        }
+        // Get the group details
+        let groupData = groupDetails.filter(item => item.gid == eData.group)
+        setGroupInfo(groupData.pop())
       }
     }
   }, [])
@@ -89,27 +89,13 @@ export default function ExpenseDetails() {
       // If users involved in the transaction
       if (eData.members) {
         let members = eData.members
-        try {
-          // Get user data involved in the transaction
-          await firestore().collection("Users").get().then((snapshot) => {
-            const temp = [];
-            snapshot.docs.forEach(
-              (document) => {
-                if (document.exists) {
-                  members.forEach((item) => {
-                    if (item == document.data().uid) {
-                      temp.push(document.data())
-                    }
-                  })
-                }
-              }
-            )
-            // Set user data involved in the transaction
-            setMembersData(temp)
-          })
-        } catch (error) {
-          console.log(error)
-        }
+        let temp = []
+        const friendPromises = members.map(async (item) => {
+          const document = await firestore().collection("Users").doc(item).get();
+          if (document.exists) { temp.push(document.data()) }
+        });
+        await Promise.all(friendPromises);
+        setMembersData(temp)
       }
     }
   }, [])
@@ -421,9 +407,13 @@ export default function ExpenseDetails() {
             {groupInfo ?
               <View style={[styles.groupWrapper]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Image source={{ uri: groupInfo['imageurl'] }} style={styles.groupImage} />
+                  {(groupInfo.imageurl) ?
+                    <Image source={{ uri: groupInfo.imageurl }} style={styles.groupImage} />
+                    :
+                    <ImageHolderGroup emoji={groupInfo.emoji} size={30} num={groupInfo.imagenum} />
+                  }
                   <Text style={styles.groupName}>
-                    {groupInfo['gname']}
+                    {groupInfo.gname}
                   </Text>
                 </View>
               </View>
@@ -458,7 +448,11 @@ export default function ExpenseDetails() {
                     <View>
                       <View style={[styles.friendListWrapper]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                          <Image source={{ uri: item.imageurl }} style={styles.friendListImage} />
+                          {(item.imageurl) ?
+                            <Image source={{ uri: item.imageurl }} style={styles.friendListImage} />
+                            :
+                            <ImageHolder text={item.name} size={30} num={item.imagenum} />
+                          }
                           <Text style={styles.friendListName}>
                             {item.name}
                           </Text>
@@ -514,7 +508,11 @@ export default function ExpenseDetails() {
                         <View>
                           <View style={[styles.friendListWrapper]}>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                              <Image source={{ uri: item.imageurl }} style={styles.friendListImage} />
+                              {(item.imageurl) ?
+                                <Image source={{ uri: item.imageurl }} style={styles.friendListImage} />
+                                :
+                                <ImageHolder text={item.name} size={30} num={item.imagenum} />
+                              }
                               <Text style={styles.friendListName}>
                                 {item.name}
                               </Text>

@@ -52,22 +52,16 @@ const GroupSetting = () => {
         setMemberNum(groupIDS.length)
         let members = groupIDS.filter(item => item !== auth().currentUser.uid)
 
-        await firestore().collection("Users").get().then((snapshot) => {
-            let temp = [];
-            snapshot.docs.forEach(
-                (document) => {
-                    if (document.exists) {
-                        members.forEach((item) => {
-                            if (item == document.data().uid) {
-                                temp.push(document.data())
-                            }
-                        })
-                    }
+        let temp = []
+        members.forEach((item) => {
+            firestore().collection("Users").doc(item).get().then((document) => {
+                if (document) {
+                    temp.push(document.data())
                 }
-            )
-            setMemberData(temp)
-            setLoading(false)
-        });
+            })
+        })
+        setMemberData(temp)
+        setLoading(false)
 
     }
 

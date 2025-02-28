@@ -1,7 +1,7 @@
 import React from 'react'
 import { Text, View } from 'react-native'
 
-export const ImageHolder = ({ text, size, num }) => {
+export const ImageHolderGroup = ({ emoji, size, num }) => {
     const colorArray = ['blue', 'blueviolet', 'darkblue', 'darkgreen', 'deeppink', 'dodgerblue', 'green', 'indianred', 'indigo', 'maroon', 'navy', 'peru', 'purple', 'royalblue', 'red', 'royalblue', 'violet']
     return (
         <View style={{
@@ -14,9 +14,9 @@ export const ImageHolder = ({ text, size, num }) => {
         }}>
             <Text style={{
                 color: 'white',
-                fontSize: size / 2.5
+                fontSize: size / 2
             }}>
-                {text.split(" ")[0][0] + text.split(" ")[1][0]}
+                {emoji}
             </Text>
         </View>
     )

@@ -41,7 +41,6 @@ export default Dashboard = () => {
             getUserDataFromFireStore()
             getIDFromFireStore()
         }
-
         return () => { isMounted = false; };
     }, [])
 
@@ -85,10 +84,10 @@ export default Dashboard = () => {
                     }
                     <Text style={styles.dateText}>{getCurrentDate()}</Text>
                 </View>
-                <TouchableOpacity underlayColor="transparent"
+                {/* <TouchableOpacity underlayColor="transparent"
                     onPress={() => [navigation.navigate('Notifications')]}>
                     <Icon name="notifications" size={24} color='black' />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
             <ScrollView
                 showsVerticalScrollIndicator={false}

@@ -27,7 +27,8 @@ export default Register = () => {
       "name": name,
       "phoneno": auth().currentUser.phoneNumber,
       "groups":[],
-      "imageurl": ""
+      "imageurl": "",
+      "imagenum": Math.floor(Math.random() * 17)
     }, { merge: true })
     navigation.replace('BottomNav')
   }
