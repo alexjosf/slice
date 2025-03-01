@@ -75,14 +75,10 @@ const userDataStore = create((set, get) => ({
 
           set({ friendData: friendDataTemp })
 
-          
-          console.log('Called inside snapshot')
 
           //Get transaction details from firestore database
           if (storage.contains('transactionData')) {
             let transactionID = get().transactionID
-
-            console.log('Called inside transaction function')
 
             let convertedTransactions = JSON.parse(storage.getString('transactionData')).map(txn => ({
               ...txn,
@@ -135,16 +131,16 @@ const userDataStore = create((set, get) => ({
 
   // Used with react-query
   getFriendDataFireStore: async () => {
-      let friendsTemp = []
-      const friendPromises = get().friendID.map(async (item) => {
-        const document = await firestore().collection("Users").doc(item).get();
-        if (document.exists) { friendsTemp.push(document.data()) }
-      });
-      // Wait for all promises to resolve before updating Zustand state
-      await Promise.all(friendPromises);
-      set({ friendDetails: friendsTemp });
-      storage.set('friendDetails', JSON.stringify(friendsTemp))
-      return friendsTemp
+    let friendsTemp = []
+    const friendPromises = get().friendID.map(async (item) => {
+      const document = await firestore().collection("Users").doc(item).get();
+      if (document.exists) { friendsTemp.push(document.data()) }
+    });
+    // Wait for all promises to resolve before updating Zustand state
+    await Promise.all(friendPromises);
+    set({ friendDetails: friendsTemp });
+    storage.set('friendDetails', JSON.stringify(friendsTemp))
+    return friendsTemp
   },
 
   // Used with react-query
@@ -176,7 +172,7 @@ const userDataStore = create((set, get) => ({
     set({ transactionsFriend: [...temp2] })
   },
 
-  getTransactionGroup: async (gId) => {
+  getTransactionGroup: async (gId, transactionID) => {
     let temp = [];
     get().transactionData.forEach(
       (document) => {
@@ -185,8 +181,33 @@ const userDataStore = create((set, get) => ({
         }
       }
     )
-    let temp2 = temp.sort((a, b) => b.date.toDate() - a.date.toDate());
-    set({ transactionsGroup: [...temp2] })
+
+    console.log('transactionID', transactionID)
+    const arrayIds = temp.map(obj => obj.tid);
+    console.log('ArrayId', arrayIds)
+
+    const addedIds = transactionID.filter(item => !arrayIds.includes(item));
+    console.log('AddedId', addedIds)
+    const deletedIds = arrayIds.filter(item => !transactionID.includes(item));
+    console.log('deletedId', deletedIds)
+
+    await Promise.all(
+      addedIds.map(async (item) => {
+        const document = await firestore().collection("Transactions").doc(item).get();
+        if (document.exists) {
+          temp.push(document.data());
+        }
+      })
+    );
+
+    deletedIds.forEach((item) => {
+      let temp2 = temp
+      filteredArray = temp2.filter(map => map.tid !== item);
+      temp = temp2
+    })
+
+    let sortedTemp = temp.sort((a, b) => b.date.toDate() - a.date.toDate());
+    set({ transactionsGroup: [...sortedTemp] })
   },
 
 }));

@@ -29,6 +29,12 @@ export default SearchFriend = () => {
   const [snackBarText, setSnackBarText] = useState("")
   const [snackBarVisibility, setSnackBarVisibility] = useState(false)
 
+  const chunkArray = (array, size) => {
+    return Array.from({ length: Math.ceil(array.length / size) }, (_, index) =>
+      array.slice(index * size, index * size + size)
+    );
+  };
+
   useEffect(() => {
     let isMounted = true;
     if (isMounted) {
@@ -76,23 +82,27 @@ export default SearchFriend = () => {
 
   async function getUsers(filterNumbers) {
     let numbers = await filterNumbers.filter(item => item !== userData.phoneno)
+    if (!numbers.length) return;
 
-    await firestore().collection("Users").get().then((snapshot) => {
+    try {
       let temp = [];
-      snapshot.docs.forEach(
-        (document) => {
-          if (document.exists) {
-            numbers.forEach((item) => {
-              if (item == document.data().phoneno) {
-                temp.push(document.data())
-              }
-            })
-          }
-        }
-      )
-      setUsers(temp)
-      setLoading(false)
-    });
+      const chunkedNumbers = chunkArray(numbers, 30); // Break into batches of 30
+  
+      for (const chunk of chunkedNumbers) {
+        const snapshot = await firestore()
+          .collection("Users")
+          .where("phoneno", "in", chunk)
+          .get();
+  
+        temp = [...temp, ...snapshot.docs.map((doc) => doc.data())];
+      }
+  
+      setUsers(temp);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  
+    setLoading(false);
   }
 
   const AddFriendAlert = (uid) => {

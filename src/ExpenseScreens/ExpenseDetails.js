@@ -34,7 +34,7 @@ export default function ExpenseDetails() {
   // Random number generated for image sof settle
   const random = route.params.random
   // Name of friend for settle expense
-  const name = route.params.name
+  const friendData = route.params.friendData
 
   // Get members Data involved in the transaction. 
   const [membersData, setMembersData] = useState([])
@@ -104,63 +104,43 @@ export default function ExpenseDetails() {
     getData()
     async function getData() {
       // Only run if paid and split and members
-      if (eData.paid && eData.split && eData.members) {
+      if (eData.split && eData.paid) {
         let paid = Object.keys(eData.paid)
         let split = Object.keys(eData.split)
         let payees = eData.payees
         console.log(payees)
         let members = membersData
-        let temp = []
         // Get paid user data
-        for (i in paid) {
-          members.forEach(
-            (member) => {
-              if (member.uid == paid[i]) {
-                temp.push(member)
-              }
-            }
-          )
-        }
+        const temp = members.filter(member => paid.includes(member.uid));
         // Set paid user data
         setPaidUserData(temp)
-        let temp2 = {}
         // Get who owes whom how much data
-        for (reciever in payees) {
-          for (payer in payees[reciever]) {
-            for (i in members) {
-              for (j in members) {
-                if (members[i].uid === reciever && members[j].uid === payer) {
-                  id = i + j
-                  if (temp2[members[i]['uid']]) {
-                    let temp3 = temp2[members[i]['uid']]
-                    let line = '     ' + members[j]['name'] + ' owes ' + currency + payees[reciever][payer]
-                    temp3.push({ 'id': id, 'title': line })
-                    temp2[members[i]['uid']] = temp3
-                  }
-                  else {
-                    let temp3 = []
-                    let line = '     ' + members[j]['name'] + ' owes ' + currency + payees[reciever][payer]
-                    temp3.push({ 'id': id, 'title': line })
-                    temp2[members[i]['uid']] = temp3
-                  }
+        const temp2 = {};
+
+        members.forEach(recieverObj => {
+          const reciever = recieverObj.uid;
+
+          if (payees[reciever]) {
+            Object.entries(payees[reciever]).forEach(([payer, amount]) => {
+              const payerObj = members.find(member => member.uid === payer);
+
+              if (payerObj) {
+                const id = `${reciever}_${payer}`;
+                const line = `     ${payerObj.name} owes ${currency}${amount}`;
+
+                if (!temp2[reciever]) {
+                  temp2[reciever] = [];
                 }
+
+                temp2[reciever].push({ id, title: line });
               }
-            }
+            });
           }
-        }
+        });
         // Set who owes whom how much data
         setPayeesData(temp2)
-        let temp3 = []
         // Get paid user datas
-        for (i in split) {
-          members.forEach(
-            (member) => {
-              if (member.uid == split[i]) {
-                temp3.push(member)
-              }
-            }
-          )
-        }
+        const temp3 = members.filter(member => split.includes(member.uid));
         // Set paid user datas
         setSplitUserData(temp3)
       }
@@ -194,6 +174,7 @@ export default function ExpenseDetails() {
     // Transaction field and select the transaction id
     let fieldName = "transactions." + eId
     console.log(fieldName)
+    var batch = firestore().batch();
 
     if (eType == "Settlement Expense") {
 
@@ -207,7 +188,7 @@ export default function ExpenseDetails() {
 
       // If friend and balance exist for payer
       if (getBalance && getBalance.balanceAmount) {
-        await getPath.update({
+        batch.update(getPath, {
           [fieldName]: firestore.FieldValue.delete(),
           uid: eMembers[1],
           balanceAmount: +parseFloat(getBalance.balanceAmount - eAmount).toFixed(2),
@@ -215,37 +196,37 @@ export default function ExpenseDetails() {
       }
       // if not friend any more
       else {
-        await getPath.set({
-          uid: eMembers[1],
-          balanceAmount: +parseFloat(- eAmount).toFixed(2),
-        }, { merge: true })
+        batch.set(getPath,
+          {
+            uid: eMembers[1],
+            balanceAmount: +parseFloat(- eAmount).toFixed(2),
+          }, { merge: true })
       }
 
       // If friend and balance exist for reciever
       if (payBalance && payBalance.balanceAmount) {
-        await payPath.update({
-          [fieldName]: firestore.FieldValue.delete(),
-          uid: eMembers[0],
-          balanceAmount: +parseFloat(payBalance.balanceAmount + eAmount).toFixed(2),
-        })
+        batch.update(payPath,
+          {
+            [fieldName]: firestore.FieldValue.delete(),
+            uid: eMembers[0],
+            balanceAmount: +parseFloat(payBalance.balanceAmount + eAmount).toFixed(2),
+          }
+        )
       }
       // if not friend any more
       else {
-        await payPath.set({
+        batch.set(payPath, {
           uid: eMembers[0],
           balanceAmount: +parseFloat(+ eAmount).toFixed(2),
         }, { merge: true })
       }
 
       // Delete from transactions
-      await firestore().collection("Transactions").doc(eId).delete()
+      batch.delete(firestore().collection("Transactions").doc(eId))
+      await batch.commit()
 
-
-
-      let token1 = (await firestore().collection("Users").doc(eMembers[0]).get()).data().token
-      sendPushNotificationSettlement(eAmount, token1)
-      let token2 = (await firestore().collection("Users").doc(eMembers[1]).get()).data().token
-      sendPushNotificationSettlement(eAmount, token2)
+      sendPushNotificationSettlement(eAmount, userData.token)
+      sendPushNotificationSettlement(eAmount, friendData.token)
 
       navigation.goBack()
     }
@@ -255,20 +236,21 @@ export default function ExpenseDetails() {
       for (receiver in ePayees) {
         for (payer in ePayees[receiver]) {
           let getPath = firestore().collection("Users").doc(receiver).collection("Friends").doc(payer)
-          let payPath = firestore().collection("Users").doc(payer).collection("Friends").doc(reciever)
+          let payPath = firestore().collection("Users").doc(payer).collection("Friends").doc(receiver)
           let getBalance = (await getPath.get()).data()
           let payBalance = (await payPath.get()).data()
 
           // If friend and balance exist for payer
           if (getBalance && getBalance.balanceAmount) {
-            await getPath.update({
+            batch.update(getPath, {
               [fieldName]: firestore.FieldValue.delete(),
               uid: payer,
               balanceAmount: +parseFloat(getBalance.balanceAmount - ePayees[receiver][payer]).toFixed(2),
-            })
+            }
+            )
           }
           else {
-            await getPath.set({
+            batch.set(getPath, {
               uid: payer,
               balanceAmount: +parseFloat(- ePayees[receiver][payer]).toFixed(2),
             }, { merge: true })
@@ -276,35 +258,40 @@ export default function ExpenseDetails() {
 
           // If friend and balance exist for reciever
           if (payBalance && payBalance.balanceAmount) {
-            await payPath.update({
+            batch.update(payPath, {
               [fieldName]: firestore.FieldValue.delete(),
               uid: receiver,
               balanceAmount: +parseFloat(payBalance.balanceAmount + ePayees[receiver][payer]).toFixed(2),
-            })
+            }
+            )
           }
           else {
-            await payPath.set({
+            batch.set(payPath, {
               uid: receiver,
               balanceAmount: +parseFloat(+ ePayees[receiver][payer]).toFixed(2),
             }, { merge: true })
           }
         }
       }
-      // Delete transaction for all member
-      await firestore().collection("Transactions").doc(eId).delete()
+
+      batch.delete(firestore().collection("Transactions").doc(eId))
+
+      // Delete transaction in  group if a group transaction
+      if (eGroup) {
+        batch.update(firestore().collection("Groups").doc(eGroup),
+          {
+            transactions: firestore.FieldValue.arrayRemove(eId)
+          })
+      }
+      
+      await batch.commit()
 
       //Send push notification
       for (let i in eMembers) {
         let token = (await firestore().collection("Users").doc(eMembers[i]).get()).data().token
         sendPushNotificationExpense(eTotalAmount, eDescription, eAmount[eMembers[i]], token)
       }
-      // Delete transaction in  group if a group transaction
-      if (eGroup) {
-        await firestore().collection("Groups").doc(eGroup)
-          .set({
-            transactions: firestore.FieldValue.arrayRemove(eId)
-          }, { merge: true })
-      }
+      
       navigation.goBack()
     }
   }
@@ -316,7 +303,7 @@ export default function ExpenseDetails() {
       return 'you'
     }
     else {
-      return name
+      return friendData.name.split(" ")[0]
     }
   }
 

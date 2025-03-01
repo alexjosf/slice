@@ -29,7 +29,7 @@ export default FriendSetting = () => {
 
     useEffect(() => {
         let temp = []
-        Object.values(groupData).forEach(
+        groupData.forEach(
             (document) => {
                 if ((document.members).includes(uId)) {
                     temp.push(document)
@@ -40,7 +40,7 @@ export default FriendSetting = () => {
     }, [])
 
     const unFriendAlert = (uId, balanceAmount) => {
-        Alert.alert('UNFRIEND', 'Do you really want to unfriend?',
+        Alert.alert('UNFRIEND', 'Do you really want to unfriend? The transactions between both will deleted and cannot be restored.',
             [
                 {
                     text: 'CANCEL',
@@ -64,6 +64,7 @@ export default FriendSetting = () => {
             firestore().collection("Users").doc(auth().currentUser.uid).collection('Friends')
                 .doc(uId)
                 .delete()
+                navigation.navigate('BottomNav')
         }
     }
 

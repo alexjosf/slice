@@ -10,17 +10,16 @@ import {
 import Colors from '../../assets/colors/Colors'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 import { useNavigation } from '@react-navigation/native';
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
 import userDataStore from '../../store';
 
-export default Dashboard = () => {
+export default function Dashboard() {
     const navigation = useNavigation();
     const [payAmount, setPayAmount] = useState(0)
     const [getAmount, setGetAmount] = useState(0)
     const [refreshing, setRefreshing] = useState(false);
     const getUserDataFromFireStore = userDataStore((state) => state.getUserDataFromFireStore)
     const getIDFromFireStore = userDataStore((state) => state.getIDFromFireStore)
+    const balanceAmountFriends = userDataStore((state) => state.balanceAmountFriends)
     const userData = userDataStore((state) => state.userData)
 
     const getCurrentDate = () => {
@@ -40,33 +39,20 @@ export default Dashboard = () => {
         if (isMounted) {
             getUserDataFromFireStore()
             getIDFromFireStore()
-        }
-        return () => { isMounted = false; };
-    }, [])
-
-    useEffect(() => {
-        let isMounted = true;
-        if (isMounted) {
             getGroupTransaction()
             async function getGroupTransaction() {
-                await firestore().collection("Users")
-                    .doc(auth().currentUser.uid)
-                    .collection("Friends")
-                    .get().then((snapshot) => {
-                        let get = 0
-                        let pay = 0
-                        snapshot.docs.forEach(
-                            (document) => {
-                                if (document.data().balanceAmount >= 0) {
-                                    get += document.data().balanceAmount
-                                }
-                                else if (document.data().balanceAmount < 0) {
-                                    pay += document.data().balanceAmount
-                                }
-                            })
-                        setGetAmount(+parseFloat(get).toFixed(2))
-                        setPayAmount(+parseFloat(Math.abs(pay)).toFixed(2))
-                    })
+                let get = 0
+                let pay = 0
+                for (i in balanceAmountFriends) {
+                    if (balanceAmountFriends[i] >= 0) {
+                        get += balanceAmountFriends[i]
+                    }
+                    else if (balanceAmountFriends[i] < 0) {
+                        pay += balanceAmountFriends[i]
+                    }
+                }
+                setGetAmount(+parseFloat(get).toFixed(2))
+                setPayAmount(+parseFloat(Math.abs(pay)).toFixed(2))
             }
         }
         return () => { isMounted = false; };
@@ -121,7 +107,7 @@ export default Dashboard = () => {
                 {/*Buttons*/}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', flex: 1 }}>
                     <View style={{ flex: 1 }}>
-                        <TouchableOpacity onPress={() => [navigation.navigate('Expenses')]}>
+                        <TouchableOpacity onPress={() => [navigation.navigate('History', { random: Math.floor(Math.random() * 9)})]}>
                             <View style={styles.buttonContainer}>
                                 <View style={{ alignItems: 'center' }}>
                                     <View style={styles.buttonIconWrapper}>

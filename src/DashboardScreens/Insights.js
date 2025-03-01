@@ -21,7 +21,7 @@ export default Insights = () => {
     const currency = route.params.currency;
     const transactionData = userDataStore((state) => state.transactionData)
 
-    const [pieData, setPieData] = useState({})
+    const [pieData, setPieData] = useState({"0": 0, "1": 0, "2": 0, "3": 0, "4": 0, "5": 0})
     const [totalSpent, setTotalSpent] = useState()
     const [transactions, setTransactions] = useState();
     const [date, setDate] = useState(new Date());
@@ -32,11 +32,11 @@ export default Insights = () => {
     useEffect(() => {
         let isMounted = true;
         if (isMounted) {
-            setLoading(true)
             getTransaction()
             async function getTransaction() {
                 let temp = [];
                 transactionData.forEach((document) => {
+                    console.log(document)
                     if (DateString(document.date).split(" ")[1] === date.toDateString().split(" ")[1] && DateString(document.date).split(" ")[3] == date.toDateString().split(" ")[3]) {
                         if (document.split) {
                             if (document.split[auth().currentUser.uid]) {
@@ -46,6 +46,7 @@ export default Insights = () => {
                             temp.push({ 'category': document.category, 'amount': document.amount })
                         }
                     }
+                    console.log(temp)
                     setTransactions(temp)
                 })
             }

@@ -34,8 +34,8 @@ export default Register = () => {
   }
 
   const CreateAccount = async (name) => {
-    if (name.trim().split(" ").length <= 1) {
-      setAlert("Empty field")
+    if (name.trim().split(" ").length != 2) {
+      setAlert("Enter first and last name")
     }
     else {
       await auth().currentUser.updateProfile({
@@ -122,40 +122,7 @@ const styles = StyleSheet.create({
   },
   alertText: {
     alignSelf: 'flex-start',
-    marginLeft: 25,
     fontSize: 12,
     color: Colors.red,
-  },
-  modalView: {
-    width: Dimensions.get('window').width - 20,
-    height: Dimensions.get('window').width - 20,
-    backgroundColor: 'white',
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 15,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalHeader: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.black
-  },
-  modalButton: {
-    borderRadius: 10,
-    padding: 10,
-    margin: 10,
-    elevation: 0,
-    backgroundColor: 'black'
-  },
-  modalText: {
-    color: 'white',
-    fontWeight: 'bold',
-    textAlign: 'center',
   },
 })

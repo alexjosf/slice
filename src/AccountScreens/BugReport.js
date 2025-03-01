@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Keyboard } from 'react-native'
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import firestore from '@react-native-firebase/firestore';
 import Colors from '../../assets/colors/Colors';
 import auth from '@react-native-firebase/auth';
 import { useNavigation } from '@react-navigation/native';
 
 
-export default BugReport = () => {
+export default function BugReport() {
     const navigation = useNavigation()
     const [about, setAbout] = useState("");
     const [description, setDescription] = useState("");
@@ -35,9 +35,19 @@ export default BugReport = () => {
     return (
         <View style={styles.container}>
             <View style={styles.AppBar}>
+                <TouchableOpacity
+                    activeOpacity={0.5}
+                    onPress={() => navigation.goBack()}>
+                    <View style={styles.iconButton}>
+                        <Icon name='arrow-back-ios' size={20} color={Colors.black} />
+                    </View>
+                </TouchableOpacity>
                 <Text style={styles.AppBarText}>
                     Bugs or feedback
                 </Text>
+                <View style={styles.iconButton}>
+                    <Icon name='arrow-back-ios' size={20} color='transparent' />
+                </View>
             </View>
             <View style={{ flex: 1 }}>
                 <TextInput style={styles.descriptionBox}
@@ -80,15 +90,21 @@ const styles = StyleSheet.create({
     AppBar: {
         backgroundColor: Colors.white,
         alignItems: 'center',
-        height: 65,
+        height: 60,
         justifyContent: 'space-between',
         flexDirection: 'row',
-        paddingHorizontal: 15,
+        paddingHorizontal: 10,
     },
     AppBarText: {
-        fontSize: 20,
+        fontSize: 16,
         fontWeight: 'bold',
         color: 'black',
+    },
+    iconButton: {
+        backgroundColor: "transparent",
+        marginVertical: 10,
+        padding: 10,
+        borderRadius: 5
     },
     descriptionBox: {
         padding: 10,

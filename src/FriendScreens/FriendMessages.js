@@ -167,7 +167,7 @@ export default FriendMessages = () => {
                                     (item.type === 'Settlement Expense') ?
                                         <TouchableOpacity
                                             activeOpacity={0.5}
-                                            onPress={() => navigation.navigate('ExpenseDetails', { eData: item, currency: currency, random: Math.floor(Math.random() * 9), name: name.split(" ")[0] })}>
+                                            onPress={() => navigation.navigate('ExpenseDetails', { eData: item, currency: currency, random: Math.floor(Math.random() * 9), friendData: friendData })}>
                                             <View style={styles.friendContainer}>
                                                 <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                                                     <Text>{user(item.members[0])} paid {user(item.members[1])} {currency}{(item.amount)}</Text>

@@ -10,11 +10,21 @@ const AccountSettings = () => {
     const navigation = useNavigation();
     return (
         <View style={styles.container}>
-            <View style={styles.headerBox}>
-                <Text style={styles.headerText}>
-                    Account Settings
-                </Text>
-            </View>
+            <View style={styles.AppBar}>
+        <TouchableOpacity
+          activeOpacity={0.5}
+          onPress={() => navigation.goBack()}>
+          <View style={styles.iconButton}>
+            <Icon name='arrow-back-ios' size={20} color={Colors.black} />
+          </View>
+        </TouchableOpacity>
+        <Text style={styles.AppBarText}>
+          Settings
+        </Text>
+        <View style={styles.iconButton}>
+          <Icon name='arrow-back-ios' size={20} color='transparent' />
+        </View>
+      </View>
             <TouchableOpacity
                 activeOpacity={0.5}
                 onPress={() => navigation.navigate('BugReport')}>
@@ -32,6 +42,16 @@ const AccountSettings = () => {
                     <Icon name="delete" color={Colors.black} size={24} />
                     <Text style={styles.settingText}>
                         Delete Account
+                    </Text>
+                </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+                activeOpacity={0.5}
+                onPress={() => navigation.navigate('About', { random: Math.floor(Math.random() * 9) })}>
+                <View style={styles.settingContainer}>
+                    <Icon name="info" color={Colors.black} size={24} />
+                    <Text style={styles.settingText}>
+                        About
                     </Text>
                 </View>
             </TouchableOpacity>
@@ -58,19 +78,24 @@ const styles = StyleSheet.create({
         width: '100%',
         backgroundColor: Colors.shade1
     },
-    headerBox: {
+    AppBar: {
+        backgroundColor: Colors.white,
         alignItems: 'center',
-        justifyContent: 'center',
+        height: 60,
+        justifyContent: 'space-between',
         flexDirection: 'row',
-        padding: 12,
-        backgroundColor: 'silver',
-        margin: 15,
-        borderRadius: 10,
+        paddingHorizontal: 10,
     },
-    headerText: {
-        fontSize: 18,
+    AppBarText: {
+        fontSize: 16,
         fontWeight: 'bold',
         color: 'black',
+    },
+    iconButton: {
+        backgroundColor: "transparent",
+        marginVertical: 10,
+        padding: 10,
+        borderRadius: 5
     },
     settingContainer: {
         backgroundColor: Colors.white,
@@ -84,6 +109,6 @@ const styles = StyleSheet.create({
     },
     settingText: {
         color: Colors.black,
-        margin:10
+        margin: 10
     },
 })

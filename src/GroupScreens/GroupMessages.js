@@ -1,4 +1,4 @@
-import { React, useState, useEffect, useCallback } from 'react'
+import { React, useState, useEffect } from 'react'
 import {
     View,
     Text,
@@ -24,11 +24,11 @@ import { ImageHolderGroup } from '../_Components/ImageHolderGroup';
 export default GroupMessages = () => {
     const navigation = useNavigation();
     const route = useRoute();
-    const gData = route.params.gData
     const gId = route.params.gId
     const random = route.params.random
 
     const [loading, setLoading] = useState(true);
+    const [gData, setGData] = useState(route.params.gData);
 
     const userCountry = userDataStore((state) => state.userCountry)
     const transactions = userDataStore((state) => state.transactionsGroup)
@@ -36,7 +36,8 @@ export default GroupMessages = () => {
 
     useEffect(() => {
         const unsubscribe = firestore().collection("Groups").doc(gId).onSnapshot(documentSnapshot => {
-            if (documentSnapshot && documentSnapshot.data()) {
+            if (documentSnapshot.exists) {
+                setGData(documentSnapshot.data())
                 getTransactionGroup(gId, documentSnapshot.data().transactions)
             }
             setLoading(false)

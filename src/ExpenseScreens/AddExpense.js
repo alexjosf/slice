@@ -28,7 +28,7 @@ import userDataStore from '../../store';
 import { ImageHolder } from '../_Components/ImageHolder';
 import { ImageHolderGroup } from '../_Components/ImageHolderGroup';
 
-export default AddExpense = () => {
+export default function AddExpense () {
   const navigation = useNavigation();
   const route = useRoute();
   const uId = route.params.uId;
@@ -250,6 +250,7 @@ export default AddExpense = () => {
 
     // need edit cache data
     for (i in transactionMembers) {
+      //
       let token = (await firestore().collection("Users").doc(transactionMembers[i]).get()).data().token
       sendPushNotificationExpense(description, amount, oweAmount[transactionMembers[i]], token)
     }
@@ -519,7 +520,7 @@ export default AddExpense = () => {
               {(groupSelected.imageurl) ?
                 <Image source={{ uri: groupSelected.imageurl }} style={styles.memberListImage} />
                 :
-                <ImageHolder emoji={groupSelected.emoji} size={30} num={groupSelected.imagenum} />
+                <ImageHolderGroup emoji={groupSelected.emoji} size={30} num={groupSelected.imagenum} />
               }
               <Text style={styles.memberListText}>
                 {groupSelected['gname']}

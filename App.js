@@ -31,11 +31,12 @@ import BugReport from './src/AccountScreens/BugReport';
 import BlockList from './src/AccountScreens/BlockList';
 import Register from './src/StartScreens/Register';
 import LogIn from './src/StartScreens/LogIn';
-import Expenses from './src/DashboardScreens/Expenses';
+import History from './src/DashboardScreens/History';
 import ExpenseDetails from './src/ExpenseScreens/ExpenseDetails';
 import SettleExpense from './src/ExpenseScreens/SettleExpense';
 import SelectCountry from './src/StartScreens/SelectCountry';
 import DeleteAccount from './src/AccountScreens/DeleteAccount';
+import  About  from './src/AccountScreens/About';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // create the bottomtab navigator
@@ -71,13 +72,8 @@ export default function App() {
     }
   }
 
-  const getToken = async () => {
-    const token = await messaging().getToken()
-  }
-
   useEffect(() => {
     requestUserPermission()
-    getToken()
   }, [])
 
   async function saveTokenToDatabase(token) {
@@ -145,10 +141,11 @@ export default function App() {
           <Stack.Screen name="BlockList" component={BlockList} />
           <Stack.Screen name="BugReport" component={BugReport} />
           <Stack.Screen name="AddExpense" component={AddExpense} />
-          <Stack.Screen name="Expenses" component={Expenses} />
+          <Stack.Screen name="History" component={History} />
           <Stack.Screen name="ExpenseDetails" component={ExpenseDetails} />
           <Stack.Screen name="SettleExpense" component={SettleExpense} />
           <Stack.Screen name="DeleteAccount" component={DeleteAccount} />
+          <Stack.Screen name="About" component={About} />
         </Stack.Navigator>
       </NavigationContainer>
     </QueryClientProvider>
