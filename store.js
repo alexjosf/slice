@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import auth from '@react-native-firebase/auth'
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
-
 import { MMKV } from 'react-native-mmkv';
+import NetInfo from "@react-native-community/netinfo";
 
 const storage = new MMKV();
 
@@ -11,6 +11,11 @@ const userDataStore = create((set, get) => ({
   userData: [], // Entire user data.
   userCountry: '', // User country for currency
 
+  connectionInfo: null,
+
+  payAmount: 0,
+  getAmount: 0,
+
   groupID: [], // All the group ID's
   friendID: [], // ID of all the friends
   transactionID: [], // All the traction id's from friends
@@ -18,17 +23,17 @@ const userDataStore = create((set, get) => ({
   friendData: [], // Transactions of each user
 
   transactionData: [], // Details of each transactions
+  balanceAmountFriends: {}, // Balance amount of each friends
 
   groupDetails: storage.getString("groupDetails") ? JSON.parse(storage.getString("groupDetails")) : [], // Details of each groups
 
   friendDetails: storage.getString("friendDetails") ? JSON.parse(storage.getString("friendDetails")) : [], // Details of each friends
 
   transactionsFriend: [], // The transactions of single friend
-  balanceAmountFriends: {}, // Balance amount of each friends
   transactionsGroup: [], // Transactions that in a group.
 
   getUserDataFromFireStore: async () => {
-    // storage.clearAll()
+    //storage.clearAll()
 
     //Get user data
     firestore().collection("Users").doc(auth().currentUser.uid).onSnapshot((documentSnapshot) => {
@@ -51,12 +56,20 @@ const userDataStore = create((set, get) => ({
           let friendIdTemp = [];
           let balanceTemp = {};
           let friendDataTemp = {};
+          let getAmount = 0
+          let payAmount = 0
           querySnapshot.forEach(
             (document) => {
               if (document.exists && document.data().transactions) {
                 let item = document.data().transactions
                 // Transaction ids
                 transactionIdTemp.push(Object.keys(item))
+                if (document.data().balanceAmount >= 0) {
+                  getAmount += document.data().balanceAmount
+                }
+                else if (document.data().balanceAmount < 0) {
+                  payAmount += document.data().balanceAmount
+                }
               }
               // The list of friend ids
               friendIdTemp.push(document.ref.id)
@@ -75,6 +88,8 @@ const userDataStore = create((set, get) => ({
 
           set({ friendData: friendDataTemp })
 
+          set({ getAmount: +parseFloat(getAmount).toFixed(2) })
+          set({ payAmount: +parseFloat(Math.abs(payAmount)).toFixed(2) })
 
           //Get transaction details from firestore database
           if (storage.contains('transactionData')) {
@@ -124,8 +139,8 @@ const userDataStore = create((set, get) => ({
                 })
             })
           }
-        })
 
+        })
     }
   },
 
@@ -156,7 +171,6 @@ const userDataStore = create((set, get) => ({
     set({ groupDetails: groupsTemp });
     storage.set('groupDetails', JSON.stringify(groupsTemp))
     return groupsTemp
-
   },
 
   getTransactionFriend: async (uId) => {
@@ -182,31 +196,8 @@ const userDataStore = create((set, get) => ({
       }
     )
 
-    console.log('transactionID', transactionID)
-    const arrayIds = temp.map(obj => obj.tid);
-    console.log('ArrayId', arrayIds)
-
-    const addedIds = transactionID.filter(item => !arrayIds.includes(item));
-    console.log('AddedId', addedIds)
-    const deletedIds = arrayIds.filter(item => !transactionID.includes(item));
-    console.log('deletedId', deletedIds)
-
-    await Promise.all(
-      addedIds.map(async (item) => {
-        const document = await firestore().collection("Transactions").doc(item).get();
-        if (document.exists) {
-          temp.push(document.data());
-        }
-      })
-    );
-
-    deletedIds.forEach((item) => {
-      let temp2 = temp
-      filteredArray = temp2.filter(map => map.tid !== item);
-      temp = temp2
-    })
-
     let sortedTemp = temp.sort((a, b) => b.date.toDate() - a.date.toDate());
+
     set({ transactionsGroup: [...sortedTemp] })
   },
 

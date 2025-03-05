@@ -42,9 +42,9 @@ export default GroupMessages = () => {
             }
             setLoading(false)
         })
-
         return () => unsubscribe();
     }, [gId]);
+
 
     return (
         <View style={styles.container}>
@@ -116,7 +116,8 @@ export default GroupMessages = () => {
                                                         </Text>
                                                     </View>
                                                     <View style={{ width: '25%', alignItems: 'flex-end', justifyContent: 'center' }}>
-                                                        <Text style={{
+                                                        {(item.amount[auth().currentUser.uid])?
+                                                            <Text style={{
                                                             fontWeight: 'bold',
                                                             fontSize: 14,
                                                             color: (item.amount[auth().currentUser.uid] >= 0) ? Colors.green : Colors.red,
@@ -125,6 +126,14 @@ export default GroupMessages = () => {
                                                             {CountryData[userCountry]['currency']}
                                                             {Math.abs(item.amount[auth().currentUser.uid])}
                                                         </Text>
+                                                        :
+                                                        <Text style={{
+                                                            fontWeight: 'bold',
+                                                            fontSize: 14,
+                                                            color: Colors.black,
+                                                        }}>
+                                                            nil
+                                                        </Text>}
                                                     </View>
                                                 </View>
                                             </View>
@@ -141,7 +150,7 @@ export default GroupMessages = () => {
                         <View style={{ height: 75 }} />
                     </ScrollView>
             }
-            <FAB
+            {/* <FAB
                 icon={'plus'}
                 extended={false}
                 visible={true}
@@ -149,7 +158,7 @@ export default GroupMessages = () => {
                 style={styles.fab}
                 backgroundColor='royalblue'
                 onPress={() => { navigation.navigate('AddExpense', { gId: gData }) }}
-            />
+            /> */}
         </View>
     )
 }

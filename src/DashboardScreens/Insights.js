@@ -36,7 +36,6 @@ export default Insights = () => {
             async function getTransaction() {
                 let temp = [];
                 transactionData.forEach((document) => {
-                    console.log(document)
                     if (DateString(document.date).split(" ")[1] === date.toDateString().split(" ")[1] && DateString(document.date).split(" ")[3] == date.toDateString().split(" ")[3]) {
                         if (document.split) {
                             if (document.split[auth().currentUser.uid]) {
@@ -46,7 +45,6 @@ export default Insights = () => {
                             temp.push({ 'category': document.category, 'amount': document.amount })
                         }
                     }
-                    console.log(temp)
                     setTransactions(temp)
                 })
             }

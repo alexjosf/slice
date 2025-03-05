@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, { useEffect } from 'react'
+import React, { useEffect , useState} from 'react'
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
@@ -11,6 +11,7 @@ import firestore from '@react-native-firebase/firestore';
 
 import messaging from '@react-native-firebase/messaging';
 import { PermissionsAndroid } from 'react-native';
+import NetInfo from "@react-native-community/netinfo";
 
 import Account from './src/AccountScreens/AccountMain';
 import Friends from './src/FriendScreens/FriendsMain';
@@ -36,7 +37,8 @@ import ExpenseDetails from './src/ExpenseScreens/ExpenseDetails';
 import SettleExpense from './src/ExpenseScreens/SettleExpense';
 import SelectCountry from './src/StartScreens/SelectCountry';
 import DeleteAccount from './src/AccountScreens/DeleteAccount';
-import  About  from './src/AccountScreens/About';
+import About from './src/AccountScreens/About';
+import NoConnection from './src/DashboardScreens/NoConnection';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // create the bottomtab navigator
@@ -49,6 +51,17 @@ const queryClient = new QueryClient();
 
 //Default function to export
 export default function App() {
+  const [isConnected, setIsConnected] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(state.isConnected);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   try {
     PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
@@ -124,6 +137,7 @@ export default function App() {
           <Stack.Screen name="SelectCountry" component={SelectCountry} />
           <Stack.Screen name="LogIn" component={LogIn} />
           <Stack.Screen name="Register" component={Register} />
+          <Stack.Screen name="NoConnection" component={NoConnection} />
           <Stack.Screen name='BottomNav' component={BottomTabs} />
           <Stack.Screen name="GroupSetting" component={GroupSetting} />
           <Stack.Screen name="FriendSetting" component={FriendSetting} />

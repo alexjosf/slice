@@ -11,16 +11,31 @@ import Colors from '../../assets/colors/Colors'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 import { useNavigation } from '@react-navigation/native';
 import userDataStore from '../../store';
+import NetInfo from "@react-native-community/netinfo";
 
 export default function Dashboard() {
     const navigation = useNavigation();
-    const [payAmount, setPayAmount] = useState(0)
-    const [getAmount, setGetAmount] = useState(0)
+    const payAmount = userDataStore((state) => state.payAmount)
+    const getAmount = userDataStore((state) => state.getAmount)
     const [refreshing, setRefreshing] = useState(false);
     const getUserDataFromFireStore = userDataStore((state) => state.getUserDataFromFireStore)
     const getIDFromFireStore = userDataStore((state) => state.getIDFromFireStore)
-    const balanceAmountFriends = userDataStore((state) => state.balanceAmountFriends)
     const userData = userDataStore((state) => state.userData)
+
+    useEffect(() => {
+        const unsubscribe = NetInfo.addEventListener(state => {
+            if (!state.isConnected) {
+                navigation.reset({
+                    index: 0,
+                    routes: [{name: 'NoConnection'}],
+                  });
+                // navigation.replace('NoConnection')
+            }
+        });
+
+        return () => { unsubscribe(); };
+
+    }, []);
 
     const getCurrentDate = () => {
         const toDate = new Date().toDateString().split(" ")
@@ -39,21 +54,6 @@ export default function Dashboard() {
         if (isMounted) {
             getUserDataFromFireStore()
             getIDFromFireStore()
-            getGroupTransaction()
-            async function getGroupTransaction() {
-                let get = 0
-                let pay = 0
-                for (i in balanceAmountFriends) {
-                    if (balanceAmountFriends[i] >= 0) {
-                        get += balanceAmountFriends[i]
-                    }
-                    else if (balanceAmountFriends[i] < 0) {
-                        pay += balanceAmountFriends[i]
-                    }
-                }
-                setGetAmount(+parseFloat(get).toFixed(2))
-                setPayAmount(+parseFloat(Math.abs(pay)).toFixed(2))
-            }
         }
         return () => { isMounted = false; };
     }, [refreshing])
@@ -107,7 +107,7 @@ export default function Dashboard() {
                 {/*Buttons*/}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', flex: 1 }}>
                     <View style={{ flex: 1 }}>
-                        <TouchableOpacity onPress={() => [navigation.navigate('History', { random: Math.floor(Math.random() * 9)})]}>
+                        <TouchableOpacity onPress={() => [navigation.navigate('History', { random: Math.floor(Math.random() * 9) })]}>
                             <View style={styles.buttonContainer}>
                                 <View style={{ alignItems: 'center' }}>
                                     <View style={styles.buttonIconWrapper}>

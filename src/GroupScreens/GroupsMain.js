@@ -36,17 +36,6 @@ const Groups = () => {
         }, 2000);
     }, []);
 
-    useEffect(() => {
-        let isMounted = true;
-        if (isMounted) {
-            getGroupDataFireStore()
-        }
-
-        return () => { isMounted = false; };
-    }, [refreshing]);
-
-
-
     return (
         <View style={styles.container}>
             <View style={styles.AppBar}>

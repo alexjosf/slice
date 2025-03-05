@@ -4,8 +4,6 @@ import Colors from '../../assets/colors/Colors'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 import { useNavigation } from '@react-navigation/native';
 
-
-
 const AccountSettings = () => {
     const navigation = useNavigation();
     return (

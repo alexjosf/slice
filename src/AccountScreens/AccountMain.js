@@ -21,6 +21,7 @@ import CountryData from '../../assets/data/CountryData';
 import messaging from '@react-native-firebase/messaging';
 import userDataStore from '../../store';
 import { ImageHolder } from '../_Components/ImageHolder'
+import NetInfo from "@react-native-community/netinfo";
 
 export default Account = () => {
     const navigation = useNavigation();
@@ -39,6 +40,17 @@ export default Account = () => {
     const [code, setCode] = useState('');
 
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const unsubscribe = NetInfo.addEventListener(state => {
+            if (!state.isConnected) {
+                navigation.replace('NoConnection')
+            }
+        });
+
+        return () => { unsubscribe(); };
+
+    }, []);
 
     function validatePhoneNumber(phoneNumber) {
         const phonePattern = /^(?:\+?\d{1,3})?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})$/;
@@ -95,7 +107,7 @@ export default Account = () => {
         );
     }
 
-    async function removeTokenAndSignOut () {
+    async function removeTokenAndSignOut() {
         setLoading(true)
         // Assume user is already signed in
         const userId = auth().currentUser.uid;
@@ -136,7 +148,7 @@ export default Account = () => {
                                 <Image source={{ uri: userData.imageurl }}
                                     style={styles.profilePicture} />
                             </View>
-                        </TouchableOpacity> : <ImageHolder text = {userData.name} size = {100} num={userData.imagenum}/>
+                        </TouchableOpacity> : <ImageHolder text={userData.name} size={100} num={userData.imagenum} />
                     }
                     <Text style={styles.basicInfoText}>
                         Basic Info

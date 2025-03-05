@@ -41,8 +41,9 @@ export default function History() {
         let isMounted = true;
         if (isMounted) {
             getTransactions()
-            async function getTransactions() {
-                let temp = transactionData.sort((a, b) => b.date.toDate() - a.date.toDate());
+            function getTransactions() {
+                const filteredTransactions = transactionData.filter(item => item.type !== 'Settlement Expense');
+                let temp = filteredTransactions.sort((a, b) => b.date.toDate() - a.date.toDate());
                 setTransactions(temp)
                 setLoading(false)
             }
@@ -93,9 +94,6 @@ export default function History() {
                             showsVerticalScrollIndicator={false}
                             keyExtractor={item => item.tid}
                             renderItem={({ item }) => (
-                                (item.type === 'Settlement Expense') ?
-                                    <View />
-                                    :
                                     <TouchableOpacity
                                         activeOpacity={0.5}
                                         onPress={() => navigation.navigate('ExpenseDetails', { eData: item, currency: CountryData[userCountry]['currency'] })}>

@@ -19,6 +19,7 @@ import { FAB } from 'react-native-paper';
 import DateString from '../_Components/DateString';
 import userDataStore from '../../store';
 import { ImageHolder } from '../_Components/ImageHolder';
+import NetInfo from "@react-native-community/netinfo";
 
 export default FriendMessages = () => {
     const navigation = useNavigation();
@@ -39,6 +40,18 @@ export default FriendMessages = () => {
     const getTransactionFriend = userDataStore((state) => state.getTransactionFriend)
     const transactions = userDataStore((state) => state.transactionsFriend)
     const balanceAmountFriends = userDataStore((state) => state.balanceAmountFriends)
+    const transactionData = userDataStore((state) => state.transactionData)
+
+    useEffect(() => {
+        const unsubscribe = NetInfo.addEventListener(state => {
+            if (!state.isConnected) {
+                navigation.replace('NoConnection')
+            }
+        });
+
+        return () => { unsubscribe(); };
+
+    }, []);
 
     const user = (userId) => {
         if (userId == auth().currentUser.uid) {
@@ -77,7 +90,7 @@ export default FriendMessages = () => {
         }
         getTransactionFriend(uId)
         setLoading(false)
-    }, [uId]);
+    }, [transactionData]);
 
     return (
         <View style={styles.container}>
@@ -239,15 +252,15 @@ export default FriendMessages = () => {
                             </View>
                         </ScrollView>
             }
-            <FAB
+            {/* <FAB
                 icon={'plus'}
                 extended={false}
-                onPress={() => { navigation.navigate('AddExpense', { uId: uId}) }}
+                onPress={() => { navigation.navigate('AddExpense', { uId: uId }) }}
                 visible={true}
                 style={styles.fab}
                 color='white'
                 backgroundColor='royalblue'
-            />
+            /> */}
         </View>
     )
 }
